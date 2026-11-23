@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spatial Heatwave Analysis | SPATIAL-HW</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        :root {
+            --bg-root: #060b0a;
+            --bg-navbar: #081210;
+            --bg-panel: #070e0c;
+            --bg-card: #0c1714;
+            --bg-card-header: #081210;
+            --bg-input: #0e1e1a;
+            --bg-input-focus: #142820;
+            --bg-log: #020804;
+            --bg-status-bar: #0e1e1a;
+            --bg-viz: #070e0c;
+            --border: #1a3828;
+            --accent-primary: #00cc7a;
+            --accent-cyan: #00e5cc;
+            --text-primary: #b8f0d8;
+            --text-muted: #4a8a6a;
+            --text-label: #5aaa80;
+            --text-log: #00ff88;
+            --tab-active-bg: #0c1714;
+            --tab-active-fg: #00e5cc;
+            --tab-fg: #4a8a6a;
+            --navbar-title: #00e5cc;
+            --badge-bg: #00cc7a18;
+            --badge-border: #00cc7a44;
+            --badge-fg: #00e5cc;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-root);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .top-navbar {
+            background-color: var(--bg-navbar);
+            padding: 8px 20px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            box-shadow: 0 2px 12px rgba(0,255,136,0.06);
+        }
+        .top-navbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-cyan), var(--accent-primary), transparent);
+            opacity: 0.6;
+        }
+        .navbar-brand-title {
+            color: var(--navbar-title);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.05rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,229,204,0.4);
+            margin: 0;
+        }
+
+        .left-panel {
+            background-color: var(--bg-panel);
+            height: calc(100vh - 58px);
+            overflow-y: auto;
+            padding: 18px;
+            border-right: 1px solid var(--border);
+        }
+        .main-content {
+            padding: 20px;
+            height: calc(100vh - 58px);
+            overflow-y: auto;
+        }
+
+        .section-label {
+            font-family: 'Consolas', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            margin-top: 20px;
+        }
+        .section-label:first-of-type { margin-top: 0; }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .card-header {
+            background-color: var(--bg-card-header);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            color: var(--accent-cyan);
+            font-family: 'Consolas', monospace;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            border-radius: 3px;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-input-focus);
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(0,204,122,0.15);
+        }
+        label {
+            font-size: 0.78rem;
+            color: var(--text-label);
+            margin-bottom: 2px;
+        }
+
+        .btn-primary {
+            background: transparent; border: 1px solid var(--accent-primary);
+            color: var(--accent-primary); font-family: 'Consolas', monospace;
+            letter-spacing: 1px;
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--accent-primary); color: #000;
+            box-shadow: 0 0 10px rgba(0,204,122,0.3);
+        }
+        .btn-success {
+            background: transparent; border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan); font-family: 'Consolas', monospace;
+            letter-spacing: 1px;
+        }
+        .btn-success:hover, .btn-success:focus {
+            background-color: var(--accent-cyan); color: #000;
+            box-shadow: 0 0 10px rgba(0,229,204,0.3);
+        }
+        .btn-danger {
+            background: transparent; border: 1px solid #cc2244;
+            color: #cc2244; font-family: 'Consolas', monospace;
+        }
+        .btn-danger:hover { background-color: #cc2244; color: #fff; }
+        .btn-outline-secondary { border-color: var(--border); color: var(--text-muted); }
+        .btn-outline-secondary:hover { background-color: var(--border); color: var(--text-primary); }
+        .btn-outline-primary {
+            border-color: var(--accent-primary); color: var(--accent-primary);
+            font-family: 'Consolas', monospace;
+        }
+        .btn-outline-primary:hover { background-color: var(--accent-primary); color: #000; }
+        .btn-outline-success { border-color: var(--accent-cyan); color: var(--accent-cyan); font-family: 'Consolas', monospace; }
+        .btn-outline-success:hover { background-color: var(--accent-cyan); color: #000; }
+
+        pre {
+            background-color: #070e0c; padding: 15px; border-radius: 3px;
+            color: var(--text-primary); border: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+        .log-view {
+            background-color: var(--bg-log); color: var(--text-log);
+            font-family: 'Consolas', monospace; font-size: 0.72rem;
+            height: 150px; overflow-y: scroll; padding: 10px;
+            border-radius: 3px; border: 1px solid var(--border);
+            letter-spacing: 0.5px;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: var(--tab-active-bg); color: var(--tab-active-fg);
+            border-color: var(--border) var(--border) var(--tab-active-bg);
+            font-family: 'Consolas', monospace;
+        }
+        .nav-tabs .nav-link { color: var(--tab-fg); font-family: 'Consolas', monospace; font-size: 0.82rem; }
+        .nav-tabs .nav-link:hover { color: var(--accent-primary); }
+        .nav-pills .nav-link { color: var(--tab-fg); font-size: 0.8rem; }
+        .nav-pills .nav-link.active { background-color: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .sub-tabs { margin-bottom: 15px; border-bottom: 1px solid var(--border); }
+
+        .status-bar { height: 6px; background-color: var(--bg-status-bar); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+        .status-fill { height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); width: 0%; transition: width 0.3s; }
+        #studyMap { height: 420px; border-radius: 4px; border: 1px solid var(--border); z-index: 1; }
+
+        .viz-plot-container { min-height: 420px; background-color: var(--bg-viz); border-radius: 4px; border: 1px solid var(--border); padding: 8px; }
+        .batch-table th { background-color: var(--bg-card-header); font-size: 0.75rem; font-family: 'Consolas', monospace; color: var(--accent-cyan); }
+        .batch-table td { font-size: 0.72rem; font-family: 'Consolas', monospace; }
+        .task-completed { color: #00cc7a; }
+        .task-running { color: #ccaa00; }
+        .task-error { color: #cc2244; }
+
+        .station-badge {
+            display: inline-block; background: var(--badge-bg);
+            border: 1px solid var(--badge-border); border-radius: 3px;
+            padding: 2px 6px; margin: 2px; font-size: 0.7rem; color: var(--badge-fg);
+            font-family: 'Consolas', monospace;
+        }
+
+        #themeToggleBtn {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text-muted); font-family: 'Consolas', monospace;
+            font-size: 0.72rem; padding: 4px 10px; border-radius: 3px;
+        }
+        #themeToggleBtn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-root); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+
+        .tab-icon { font-family: 'Consolas', monospace; opacity: 0.8; margin-right: 5px; }
+        .feature-selector-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 6px 10px; padding: 8px; background: var(--bg-input);
+            border: 1px solid var(--border); border-radius: 3px;
+        }
+        .feature-selector-grid label { color: var(--text-primary); font-size: 0.75rem; }
+        .metric-chip {
+            background: var(--card-header, #081210); border: 1px solid var(--border);
+            color: var(--text-muted); border-radius: 3px; padding: 3px 8px;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="top-navbar d-flex justify-content-between align-items-center">
+    <h5 class="navbar-brand-title">&#x25A6; SPATIAL-HW &mdash; Spatial Heatwave Analysis</h5>
+    <ul class="nav nav-pills" id="mainTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-compute" type="button"><span class="tab-icon">[&equiv;]</span> Computations</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-assess" type="button"><span class="tab-icon">[&#x25CB;]</span> Data Assessment</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-viz" type="button"><span class="tab-icon">[~]</span> Visualization</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-compare" type="button"><span class="tab-icon">[&gt;&lt;]</span> Comparative Analysis</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-about" type="button"><span class="tab-icon">[i]</span> About</button></li>
+    </ul>
+    <div class="d-flex align-items-center gap-2">
+        <button id="themeToggleBtn" onclick="toggleTheme()">&#x25D1; LIGHT</button>
+        <button class="btn btn-outline-success btn-sm" onclick="exportReport()">&#x21E9; Report</button>
+        <button class="btn btn-outline-primary btn-sm" onclick="exportFields('csv')">Export CSV</button>
+    </div>
+</div>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- ================= LEFT PANEL : DATA & PARAMETERS ================= -->
+        <div class="col-md-3 left-panel">
+            <div class="section-label">// 01. Data Upload &amp; Preprocessing</div>
+
+            <div class="card mb-3">
+                <div class="card-header">Temperature Data (NetCDF / GeoTIFF / ZIP)</div>
+                <div class="card-body">
+                    <input type="file" class="form-control form-control-sm mb-2" id="dataFile"
+                           accept=".nc,.tif,.tiff,.zip">
+                    <button class="btn btn-primary btn-sm w-100" onclick="uploadData()">
+                        &#x21E1; Upload Temperature Data
+                    </button>
+                    <div class="text-muted mt-2" style="font-size:0.7rem;">
+                        Supports a daily 3D NetCDF file (time × lat × lon), a single-band GeoTIFF,
+                        or a ZIP of GeoTIFFs (one per day, named as the date).
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-7">
+                            <label for="dataVariable">Temperature variable</label>
+                            <select class="form-select form-select-sm" id="dataVariable">
+                                <option value="auto">Auto-detect Tmax/Tmin</option>
+                                <option value="tmax">Tmax / TX</option>
+                                <option value="tmin">Tmin / TN</option>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label for="temperatureUnit">Input unit</label>
+                            <select class="form-select form-select-sm" id="temperatureUnit">
+                                <option value="auto">Auto</option>
+                                <option value="celsius">Celsius</option>
+                                <option value="kelvin">Kelvin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3" id="varMapCard">
+                <div class="card-header">Temperature Variable Mapping</div>
+                <div class="card-body">
+                    <button class="btn btn-outline-info btn-sm w-100 mb-2" onclick="loadVariables()">
+                        &#x1F50D; List All Variables in File
+                    </button>
+                    <div class="text-muted mb-2" style="font-size:0.7rem;">
+                        Reveals every 3-D variable stored in the uploaded NetCDF.
+                        Assign which variable is <b>TX</b> (maximum temperature)
+                        and which is <b>TN</b> (minimum temperature); the study
+                        area is then extracted from the selected field.
+                    </div>
+                    <div id="var_dropdowns" style="display:none;">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="txVar">Maximum temp (TX)</label>
+                                <select class="form-select form-select-sm" id="txVar"></select>
+                            </div>
+                            <div class="col-6">
+                                <label for="tnVar">Minimum temp (TN)</label>
+                                <select class="form-select form-select-sm" id="tnVar"></select>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-8">
+                                <label>Analyse with</label>
+                                <select class="form-select form-select-sm" id="primaryVar">
+                                    <option value="tmax">TX (maximum temperature)</option>
+                                    <option value="tmin">TN (minimum temperature)</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <label>Unit</label>
+                                <select class="form-select form-select-sm" id="mapTempUnit">
+                                    <option value="auto">Auto</option>
+                                    <option value="celsius">Celsius</option>
+                                    <option value="kelvin">Kelvin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-success btn-sm w-100" onclick="applyVariableMapping()">
+                            &#x2713; Apply Variable Mapping
+                        </button>
+                    </div>
+                    <div id="var_list" class="mt-2" style="font-size:0.72rem;"></div>
+                    <div id="var_map_report" class="mt-2" style="font-size:0.75rem;"></div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Study Area Boundary (Shapefile)</div>
+                <div class="card-body">
+                    <input type="file" class="form-control form-control-sm mb-2" id="shpFile"
+                           accept=".zip,.shp,.geojson,.gjson,.json">
+                    <button class="btn btn-primary btn-sm w-100" onclick="uploadShapefile()">
+                        &#x21E1; Upload Boundary
+                    </button>
+                    <div class="text-muted mt-2" style="font-size:0.7rem;">
+                        Supports ZIP shapefiles, standalone SHP, GeoJSON, and GJSON.
+                        ZIPs may contain folders; WGS84 is preferred.
+                    </div>
+                    <div id="shp_info" class="mt-1" style="font-size:0.72rem;"></div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Preprocessing Steps</div>
+                <div class="card-body">
+                    <div class="form-check mb-1">
+                        <input type="checkbox" class="form-check-input" id="maskShp" checked>
+                        <label class="form-check-label" for="maskShp" style="font-size:0.8rem;color:var(--text-primary);">
+                            Mask grid with shapefile
+                        </label>
+                    </div>
+                    <div class="form-check mb-1">
+                        <input type="checkbox" class="form-check-input" id="excludeSea" checked>
+                        <label class="form-check-label" for="excludeSea" style="font-size:0.8rem;color:var(--text-primary);">
+                            Exclude ocean/sea (auto land mask from data coverage)
+                        </label>
+                    </div>
+                    <div class="mb-2" style="font-size:0.72rem;color:var(--text-muted);">
+                        Cells with almost no valid data (typical of sea areas in
+                        land-only products such as CHIRTS) are skipped by detection.
+                        Optionally upload a static land/ocean mask too.
+                    </div>
+                    <div class="mb-2">
+                        <input type="file" class="form-control form-control-sm" id="landMaskFile"
+                               accept=".nc,.nc4,.netcdf,.tif,.tiff,.img">
+                        <button class="btn btn-outline-info btn-sm mt-1 w-100" onclick="uploadLandMask()">
+                            &#x1F5C7; Upload Land/Ocean Mask
+                        </button>
+                        <div id="landmask_info" class="mt-1" style="font-size:0.72rem;"></div>
+                    </div>
+                    <div class="form-check mb-1">
+                        <input type="checkbox" class="form-check-input" id="fillGaps">
+                        <label class="form-check-label" for="fillGaps" style="font-size:0.8rem;color:var(--text-primary);">
+                            Interpolate missing values (time axis)
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="smoothT">
+                        <label class="form-check-label" for="smoothT" style="font-size:0.8rem;color:var(--text-primary);">
+                            Temporal smoothing
+                        </label>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label>Smooth Window (days)</label>
+                            <input type="number" class="form-control" id="smoothWin" value="7">
+                        </div>
+                        <div class="col-6">
+                            <label>Bounding Box Fallback</label>
+                            <input type="text" class="form-control" id="boundsBox"
+                                   placeholder="latmin,latmax,lonmin,lonmax">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-success btn-sm w-100" onclick="preprocessData()">
+                        &#x2699; Run Preprocessing
+                    </button>
+                    <div id="preprocess_report" class="mt-2" style="font-size:0.75rem;"></div>
+                </div>
+            </div>
+
+            <div class="card mb-3" id="preprocessPreviewCard" style="display:none;">
+                <div class="card-header">Post-Preprocessing Preview</div>
+                <div class="card-body p-2">
+                    <div id="preprocessPreviewSummary" class="text-muted mb-2" style="font-size:0.72rem;"></div>
+                    <div id="preprocessSpatialPreview" style="height:240px;"></div>
+                    <div id="preprocessSeriesPreview" style="height:240px;"></div>
+                </div>
+            </div>
+
+            <div class="card mb-3" id="dataInfoCard" style="display:none;">
+                <div class="card-header">Loaded Dataset</div>
+                <div class="card-body p-2" id="dataInfoBody"></div>
+            </div>
+
+            <div class="section-label">// 02. Heatwave Parameters</div>
+            <div class="row g-2 mb-3">
+                <div class="col-6"><label>Climatology Start</label><input type="number" class="form-control" id="clim_start" value="1981"></div>
+                <div class="col-6"><label>Climatology End</label><input type="number" class="form-control" id="clim_end" value="2010"></div>
+                <div class="col-6"><label>Percentile</label><input type="number" class="form-control" id="pctile" value="90"></div>
+                <div class="col-6"><label>Min Duration (days)</label><input type="number" class="form-control" id="min_dur" value="3"></div>
+                <div class="col-6">
+                    <label>Join Gaps</label>
+                    <select class="form-select" id="join_gaps"><option value="false">No</option><option value="true">Yes</option></select>
+                </div>
+                <div class="col-6"><label>Max Gap</label><input type="number" class="form-control" id="max_gap" value="2"></div>
+                <div class="col-6">
+                    <label>Smooth Percentile</label>
+                    <select class="form-select" id="smooth_pctile"><option value="true">Yes</option><option value="false">No</option></select>
+                </div>
+                <div class="col-6"><label>Smooth Width</label><input type="number" class="form-control" id="smooth_pctile_width" value="31"></div>
+                <div class="col-6"><label>Window Half Width</label><input type="number" class="form-control" id="window_half_width" value="5"></div>
+            </div>
+
+            <div class="section-label">// System Status</div>
+            <div class="status-bar mb-2"><div class="status-fill" id="statusBarFill"></div></div>
+            <div id="statusLabel" class="text-muted mb-1" style="font-size:0.72rem;">Ready</div>
+            <div id="statusTimer" class="text-muted mb-2" style="font-size:0.72rem;">elapsed: 0.0 s</div>
+            <div class="d-flex gap-2 mb-2">
+                <button class="btn btn-outline-danger btn-sm" id="stopDetectBtn" onclick="stopDetect()" disabled>
+                    &#9632; Stop Job
+                </button>
+                <button class="btn btn-outline-warning btn-sm" onclick="clearAll()">
+                    &#128465; Clear Uploads / Caches
+                </button>
+            </div>
+            <div class="log-view" id="sysLog">&gt; system.init() ... OK<br>&gt; awaiting data input...<br></div>
+        </div>
+
+        <!-- ================= MAIN CONTENT ================= -->
+        <div class="col-md-9 main-content">
+            <div class="tab-content" id="mainTabContent">
+
+                <!-- ===== Tab: Heatwave Computations ===== -->
+                <div class="tab-pane fade show active" id="tab-compute">
+                    <ul class="nav nav-tabs sub-tabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#comp-detect" type="button"><span class="tab-icon">[&num;]</span> Detect Heatwaves</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#comp-stats" type="button"><span class="tab-icon">[&sigma;]</span> Statistics</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#comp-trends" type="button"><span class="tab-icon">[&Delta;]</span> Trends</button></li>
+                    </ul>
+                    <div class="tab-content">
+                        <!-- Detect -->
+                        <div class="tab-pane fade show active" id="comp-detect">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 style="font-family:'Consolas',monospace; color:var(--accent-cyan); margin:0;">
+                                    [&#x25B6;] Spatial Heatwave Detection
+                                </h5>
+                                <div class="d-flex gap-2 align-items-end">
+                                    <div>
+                                        <label>Cores</label>
+                                        <select class="form-select form-select-sm" id="nJobs" style="width:110px;font-size:0.8rem;">
+                                            <option value="0" selected>Auto (all)</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-success fw-bold" id="detectRunBtn" onclick="runDetect()">
+                                        &#x25B6; Detect Heatwaves
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-muted" style="font-size:0.82rem;">
+                                Runs the Hobday et al. (2016) heatwave definition at every grid
+                                point inside the study area, producing a spatial field of heatwave
+                                metrics you can map in the Visualization tab.
+                            </p>
+                            <div class="card">
+                                <div class="card-header">Detection Summary</div>
+                                <div class="card-body p-2" id="detect_summary_container">
+                                    <div class="text-muted text-center py-4" style="font-size:0.85rem;">
+                                        Run detection to populate the region summary.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">Top Heatwave Cells</div>
+                                <div class="card-body p-2" id="detect_table_container">
+                                    <div class="text-muted text-center py-4" style="font-size:0.85rem;">
+                                        No results yet.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div class="tab-pane fade" id="comp-stats">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 style="font-family:'Consolas',monospace; color:var(--accent-cyan); margin:0;">
+                                    [&#x03A3;] Regional Heatwave Statistics
+                                </h5>
+                                <div class="d-flex gap-2 align-items-end">
+                                    <div>
+                                        <label>Year Start</label>
+                                        <input type="number" class="form-control" id="stat_ys" value="1991" style="width:90px;">
+                                    </div>
+                                    <div>
+                                        <label>Year End</label>
+                                        <input type="number" class="form-control" id="stat_ye" value="2020" style="width:90px;">
+                                    </div>
+                                    <div>
+                                        <label>Block</label>
+                                        <select class="form-select" id="stat_block" style="width:90px;">
+                                            <option value="1">1 yr</option><option value="5">5 yr</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-outline-success" onclick="runStatistics()">
+                                        &#x25B6; Statistics
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-header">Metric Overview (all cells)</div>
+                                <div class="card-body p-2" id="stats_overview_container"></div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">Annual / Block Region Totals</div>
+                                <div class="card-body p-2" id="stats_annual_container"></div>
+                            </div>
+                        </div>
+
+                        <!-- Trends -->
+                        <div class="tab-pane fade" id="comp-trends">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 style="font-family:'Consolas',monospace; color:var(--accent-cyan); margin:0;">
+                                    [&#x25B3;] Spatial Heatwave Trends
+                                </h5>
+                                <div class="d-flex gap-2 align-items-end">
+                                    <div>
+                                        <label>Metric</label>
+                                        <select class="form-select" id="trend_metric" style="width:170px;">
+                                            <option value="n_events">Event Count</option>
+                                            <option value="total_hw_days">Total HW Days</option>
+                                            <option value="cumulative_intensity">Cumulative Intensity</option>
+                                            <option value="mean_intensity_max">Mean Peak Intensity</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>Method</label>
+                                        <select class="form-select" id="trend_method" style="width:150px;">
+                                            <option value="linear">Linear Regression</option>
+                                            <option value="mannkendall">Mann-Kendall</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-outline-success" onclick="runTrends()">
+                                        &#x25B6; Trends
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-header">Trend Summary</div>
+                                <div class="card-body p-2" id="trends_summary_container"></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <div class="viz-plot-container" id="trendMapContainer">
+                                        <div class="text-muted text-center py-5">Run trends to see the spatial trend map.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="card">
+                                        <div class="card-header">Significance (p-values)</div>
+                                        <div class="card-body p-2">
+                                            <div class="viz-plot-container" id="trendPContainer" style="min-height:380px;">
+                                                <div class="text-muted text-center py-5">p-value map will appear here.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Tab: Data Assessment ===== -->
+                <div class="tab-pane fade" id="tab-assess">
+                    <h5 style="font-family:'Consolas',monospace; color:var(--accent-cyan); margin-bottom:10px;">
+                        [&#x25CB;] Post-Preprocessing Spatial Assessment
+                    </h5>
+                    <p class="text-muted mb-3" style="font-size:0.82rem;">
+                        Visualise the loaded spatial field after preprocessing. Click any grid cell
+                        on the heatmap to plot its full time series below.
+                    </p>
+                    <div class="card mb-3">
+                        <div class="card-header">Field Summary</div>
+                        <div class="card-body p-2" id="assess_summary">
+                            <div class="text-muted text-center py-3" style="font-size:0.82rem;">
+                                Run preprocessing to view data summary.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-body py-2">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label>Time display</label>
+                                    <select class="form-select form-select-sm" id="assess_mode"
+                                            onchange="loadAssessmentField()">
+                                        <option value="last">Last available step</option>
+                                        <option value="mean">Mean over all time</option>
+                                        <option value="index">Pick time index…</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2" id="assess_tidx_box" style="display:none;">
+                                    <label>Time index</label>
+                                    <input type="number" min="0" value="0" class="form-control form-control-sm" id="assess_tidx">
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="loadAssessmentField()">
+                                        &#x25B6; Refresh
+                                    </button>
+                                </div>
+                                <div class="col-md-4 ms-auto text-end">
+                                    <span class="text-muted" style="font-size:0.72rem;" id="assess_time_label"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="viz-plot-container" id="assessMapContainer"
+                         style="min-height:420px; position:relative;">
+                        <div class="text-muted text-center py-5" id="assessMapPlaceholder">
+                            <span style="font-size:2rem; font-family:'Consolas',monospace; color:var(--border);">[ &#x25F0; ]</span><br>
+                            No spatial field available yet.
+                        </div>
+                    </div>
+                    <div class="card mt-3" id="assessSeriesCard" style="display:none;">
+                        <div class="card-header">
+                            Point Time Series — <span id="assessPointLabel" class="text-info"></span>
+                        </div>
+                        <div class="viz-plot-container" id="assessSeriesContainer"
+                             style="min-height:280px;">
+                            <div class="text-muted text-center py-4">Click a point on the heatmap to plot.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Tab: Visualization ===== -->
+                <div class="tab-pane fade" id="tab-viz">
+                    <ul class="nav nav-tabs sub-tabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#viz-map" type="button"><span class="tab-icon">[+]</span> Metric Maps</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#viz-point" type="button"><span class="tab-icon">[&bullet;]</span> Point Series</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#viz-anim" type="button"><span class="tab-icon">[&raquo;]</span> Animation</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#viz-annual" type="button"><span class="tab-icon">[&hbar;]</span> Annual Totals</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#viz-map2" type="button"><span class="tab-icon">[&#x25A0;]</span> Study Area</button></li>
+                    </ul>
+                    <div class="tab-content">
+                        <!-- Metric map -->
+                        <div class="tab-pane fade show active" id="viz-map">
+                            <div class="card mb-3">
+                                <div class="card-body py-2">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-3">
+                                            <label>Metric</label>
+                                            <select class="form-select form-select-sm" id="viz_metric">
+                                                <option value="n_events">Total Events</option>
+                                                <option value="mean_duration">Mean Duration</option>
+                                                <option value="max_duration">Max Duration</option>
+                                                <option value="mean_intensity_max">Mean Peak Intensity</option>
+                                                <option value="max_intensity_max">Max Peak Intensity</option>
+                                                <option value="mean_intensity_mean">Mean Intensity</option>
+                                                <option value="cumulative_intensity">Cumulative Intensity</option>
+                                                <option value="total_hw_days">Total HW Days</option>
+                                                <option value="mean_year_freq">Events / Year</option>
+                                                <option value="max_intensity_abs">Max Absolute Intensity</option>
+                                                <option value="categories_count">Max Category</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Colorscale</label>
+                                            <select class="form-select form-select-sm" id="viz_colorscale">
+                                                <option value="Reds">Reds</option>
+                                                <option value="YlOrRd">YlOrRd</option>
+                                                <option value="RdYlBu_r" selected>RdYlBu (rev)</option>
+                                                <option value="Hot">Hot</option>
+                                                <option value="Viridis">Viridis</option>
+                                                <option value="Cividis">Cividis</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 form-check mt-4">
+                                            <input type="checkbox" class="form-check-input" id="showSig">
+                                            <label class="form-check-label" for="showSig" style="color:var(--text-primary);">Overlay significant trend cells</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-primary btn-sm w-100" onclick="generateMetricMap()">
+                                                &#x25B6; Generate Map
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="viz-plot-container" id="metricMapContainer">
+                                <div class="text-muted text-center py-5">
+                                    <span style="font-size:2rem; font-family:'Consolas',monospace; color:var(--border);">[ &#x25F0; ]</span><br>
+                                    Run detection first, then generate a metric map.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Point series -->
+                        <div class="tab-pane fade" id="viz-point">
+                            <div class="card mb-3">
+                                <div class="card-body py-2">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-3">
+                                            <label>Latitude</label>
+                                            <input type="number" step="0.001" class="form-control form-control-sm" id="pt_lat">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Longitude</label>
+                                            <input type="number" step="0.001" class="form-control form-control-sm" id="pt_lon">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-muted" style="font-size:0.72rem; padding-top:6px;">
+                                                Or click a point on the <b>Study Area</b> map to auto-fill.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button class="btn btn-outline-primary btn-sm w-100" onclick="generatePointSeries()">
+                                                &#x25B6; Plot
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="viz-plot-container" id="pointSeriesContainer">
+                                <div class="text-muted text-center py-5">Select a grid point to view its heatwave time series.</div>
+                            </div>
+                            <div class="card mt-3">
+                                <div class="card-header">Events at the Selected Point</div>
+                                <div class="card-body p-2" id="pointEventsContainer"></div>
+                            </div>
+                        </div>
+
+                        <!-- Animation -->
+                        <div class="tab-pane fade" id="viz-anim">
+                            <div class="card mb-3">
+                                <div class="card-body py-2">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-3">
+                                            <label>Metric</label>
+                                            <select class="form-select form-select-sm" id="anim_metric">
+                                                <option value="count">Event Count</option>
+                                                <option value="days">HW Days</option>
+                                                <option value="cumint">Cumulative Intensity</option>
+                                                <option value="imax">Peak Intensity</option>
+                                                <option value="freq">Frequency / Year</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-primary btn-sm w-100" onclick="generateAnimation()">
+                                                &#x25B6; Animate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="viz-plot-container" id="animContainer">
+                                <div class="text-muted text-center py-5">Show the spatial evolution of heatwave metrics year by year.</div>
+                            </div>
+                        </div>
+
+                        <!-- Annual totals -->
+                        <div class="tab-pane fade" id="viz-annual">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="generateAnnualBars()">
+                                    &#x25B6; Generate Annual Totals
+                                </button>
+                            </div>
+                            <div class="viz-plot-container" id="annualContainer">
+                                <div class="text-muted text-center py-5">Region-wide annual heatwave totals.</div>
+                            </div>
+                        </div>
+
+                        <!-- Study area map -->
+                        <div class="tab-pane fade" id="viz-map2">
+                            <p class="text-muted" style="font-size:0.82rem;">
+                                Administrative boundary and grid points used for the analysis.
+                                Click a point to load its time series in the <b>Point Series</b> tab.
+                            </p>
+                            <div id="studyMap"></div>
+                            <div id="studyMapInfo" class="text-muted mt-2" style="font-size:0.75rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Tab: Comparative Analysis ===== -->
+                <div class="tab-pane fade" id="tab-compare">
+                    <h5 style="font-family:'Consolas',monospace; color:var(--accent-cyan);">
+                        [&gt;&lt;] Comparative Heatwave Analysis
+                    </h5>
+                    <p class="text-muted" style="font-size:0.82rem;">
+                        Compare heatwave characteristics between two climatological periods of the
+                        loaded dataset, or between two independent datasets (primary vs secondary).
+                    </p>
+
+                    <div class="card mb-3">
+                        <div class="card-header">1. Comparison Mode</div>
+                        <div class="card-body">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="cmpMode" id="cmpModePeriod" value="period" checked onclick="toggleCompareMode()">
+                                <label class="form-check-label" for="cmpModePeriod" style="color:var(--text-primary);">Two climatological periods</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="cmpMode" id="cmpModeDataset" value="dataset" onclick="toggleCompareMode()">
+                                <label class="form-check-label" for="cmpModeDataset" style="color:var(--text-primary);">Two datasets (primary vs secondary)</label>
+                            </div>
+
+                            <div class="row g-2 mt-3">
+                                <div class="col-md-3">
+                                    <label>Period A Start</label>
+                                    <input type="number" class="form-control" id="cmp_a_start" value="1991">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Period A End</label>
+                                    <input type="number" class="form-control" id="cmp_a_end" value="2005">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Period B Start</label>
+                                    <input type="number" class="form-control" id="cmp_b_start" value="2006">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Period B End</label>
+                                    <input type="number" class="form-control" id="cmp_b_end" value="2020">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Percentile</label>
+                                    <input type="number" class="form-control" id="cmp_pctile" value="90">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Min Duration</label>
+                                    <input type="number" class="form-control" id="cmp_min_dur" value="3">
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Join Gaps</label>
+                                    <select class="form-select" id="cmp_join"><option value="false">No</option><option value="true">Yes</option></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3" id="secondaryCard" style="display:none;">
+                        <div class="card-header">2. Secondary Dataset</div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-md-8">
+                                    <input type="file" class="form-control" id="secondaryFile" accept=".nc,.tif,.tiff,.zip">
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-primary btn-sm w-100" onclick="uploadSecondary()">
+                                        &#x21E1; Upload Secondary
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="secondaryInfo" class="text-muted mt-2" style="font-size:0.75rem;"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mb-3">
+                        <button class="btn btn-success fw-bold" onclick="runComparison()">
+                            &#x25B6; Run Comparison
+                        </button>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">Summary Table (Field A vs Field B)</div>
+                        <div class="card-body p-2" id="cmpSummaryContainer">
+                            <div class="text-muted text-center py-4">Run a comparison to see the table.</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            Difference Maps <span class="text-muted" style="font-size:0.7rem;">(A &minus; B)</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label>Metric</label>
+                                    <select class="form-select form-select-sm" id="cmp_diff_metric">
+                                        <option value="n_events">Event Count</option>
+                                        <option value="total_hw_days">Total HW Days</option>
+                                        <option value="mean_intensity_max">Mean Peak Intensity</option>
+                                        <option value="mean_duration">Mean Duration</option>
+                                        <option value="cumulative_intensity">Cumulative Intensity</option>
+                                        <option value="mean_year_freq">Events / Year</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="generateDiffMap()" style="margin-top:22px;">
+                                        &#x25B6; Show Difference Map
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="viz-plot-container" id="cmpDiffContainer" style="min-height:380px;">
+                                <div class="text-muted text-center py-5">Difference map appears here.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Tab: About ===== -->
+                <div class="tab-pane fade" id="tab-about">
+                    <div class="card">
+                        <div class="card-header">About SPATIAL-HW</div>
+                        <div class="card-body" style="font-size:0.9rem; line-height:1.6;">
+                            <h5 class="text-info">What is this?</h5>
+                            <p>
+                                <b>SPATIAL-HW</b> is an extension of the point-based
+                                <b>CLI-HEWS</b> heatwave dashboard. Instead of analysing a time
+                                series for a single station, it applies the
+                                <b>Hobday et al. (2016) heatwave definition</b> to <b>every grid
+                                point</b> of a gridded temperature dataset (NetCDF / GeoTIFF)
+                                that has been clipped to a study area defined by a shapefile of
+                                administrative boundaries.
+                            </p>
+                            <h5 class="text-info">Workflow</h5>
+                            <ul>
+                                <li><b>01 · Data Upload &amp; Preprocessing</b> &mdash; load the
+                                    temperature grid and the study-area boundary shapefile,
+                                    optionally mask / gap-fill / smooth the field.</li>
+                                <li><b>02 · Heatwave Computations</b> &mdash; press
+                                    <b>Detect Heatwaves</b> to compute heatwave metrics
+                                    per grid cell, <b>Statistics</b> to summarise the region, and
+                                    <b>Trends</b> to estimate spatial trends
+                                    (linear regression or Mann-Kendall) with significance.</li>
+                                <li><b>03 · Visualization</b> &mdash; map each metric over the
+                                    domain, inspect any single point's series, animate metric
+                                    evolution through time, and view region-wide annual totals.</li>
+                                <li><b>04 · Comparative Analysis</b> &mdash; compare two
+                                    climatological periods or two separate datasets and map the
+                                    differences.</li>
+                            </ul>
+                            <h5 class="text-info">Methods</h5>
+                            <p>
+                                Detection uses the <code>marineHeatWaves</code> Python module
+                                (Eric C. J. Oliver et al.) implementing the hierarchical
+                                classification in
+                                <a href="https://doi.org/10.1016/j.pocean.2015.12.014">
+                                    A hierarchical approach to defining marine heatwaves</a>.
+                                The atmospheric adaptation follows Wemegah et al.,
+                                <a href="https://doi.org/10.1002/joc.8889">Evidence of Heatwaves:
+                                Characteristics and Trends in Selected Ghanaian Cities</a>.
+                            </p>
+                            <h5 class="text-info">Input Format</h5>
+                            <p>
+                                A 3D temperature field (time × latitude × longitude) with daily
+                                resolution, either as a NetCDF file, or a stack of single-band
+                                GeoTIFFs (one per day) packed in a ZIP. Longitude values may be
+                                0&ndash;360 or &minus;180&ndash;180; they are standardised to
+                                &minus;180&ndash;180 internally.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+    // ============================================================
+    //  GLOBALS & UI HELPERS
+    // ============================================================
+    let leafletMap = null;
+    let studyPointsLayer = null;
+    let studyBoundaryLayer = null;
+    let selectedPointLat = null;
+    let selectedPointLon = null;
+    let cmpMode = 'period';
+    let cmpDiffData = null;
+
+    const logEl = document.getElementById('sysLog');
+    function logMsg(msg, cls) {
+        const time = new Date().toLocaleTimeString();
+        logEl.innerHTML += `[${time}] ${msg}<br>`;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+    function setProgress(pct, label) {
+        document.getElementById('statusBarFill').style.width = pct + '%';
+        if (label) document.getElementById('statusLabel').innerText = label;
+    }
+    function setReady() { setProgress(0, 'Ready'); }
+
+    function toggleTheme() {
+        const body = document.body;
+        if (body.style.backgroundColor === 'rgb(238, 245, 240)') { body.style.cssText = ''; }
+        else {
+            body.style.cssText = 'background-color:#eef5f0; color:#0d2a1a;';
+        }
+        window.__light = !window.__light;
+    }
+
+    async function api(url, opts) {
+        const res = await fetch(url, opts);
+        let data;
+        try { data = await res.json(); } catch (e) { throw new Error('HTTP ' + res.status); }
+        if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+        return data;
+    }
+
+    // ============================================================
+    //  SECTION 01 : UPLOAD & PREPROCESS
+    // ============================================================
+
+    let loadedDataInfo = null;
+    let discoveredVars = null;
+    let variableMap = null;
+
+    async function uploadData() {
+        const fileInput = document.getElementById('dataFile');
+        if (!fileInput.files.length) { alert('Choose a temperature file first.'); return; }
+        logMsg('Uploading temperature file...');
+        setProgress(25, 'Uploading temperature data...');
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        fd.append('variable', document.getElementById('dataVariable').value);
+        fd.append('temperature_unit', document.getElementById('temperatureUnit').value);
+        try {
+            const data = await api('/api/upload_data', { method: 'POST', body: fd });
+            loadedDataInfo = data.info;
+            renderDataInfo(data.info);
+            window._gridReady = true;
+            setProgress(100, 'Temperature data loaded');
+            logMsg(`<span class="task-completed">✔ Grid loaded: ${data.info.ntime} steps, ${data.info.nlat}×${data.info.nlon} cells.</span>`);
+            logMsg(`Variable: ${data.info.variable} | Time: ${data.info.t_start} → ${data.info.t_end}`);
+            autoFillYearDefaults(data.info);
+                 logMsg(`Variable: ${data.selected_variable || data.info.variable} | ` +
+                     `Temperature: ${data.info.converted_from_kelvin ? 'Kelvin converted to °C' : '°C / unchanged'}`);
+            if (data.info && data.info.source === 'netcdf') {
+                loadVariables();
+            } else {
+                document.getElementById('var_list').innerHTML =
+                    '<span class="text-muted">Variable listing is available for NetCDF files only.</span>';
+            }
+            setTimeout(setReady, 900);
+        } catch (err) {
+            logMsg(`<span class="task-error">Upload error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function loadVariables() {
+        const el = document.getElementById('var_list');
+        el.innerHTML = '<span class="text-muted">Reading variables…</span>';
+        try {
+            const data = await api('/api/variables');
+            discoveredVars = data.variables || [];
+            variableMap = data.variable_map || null;
+            const txSel = document.getElementById('txVar');
+            const tnSel = document.getElementById('tnVar');
+            txSel.innerHTML = '';
+            tnSel.innerHTML = '';
+            const emptyOpt = (txt) => `<option value="">${txt}</option>`;
+            txSel.innerHTML += emptyOpt('— select TX variable —');
+            tnSel.innerHTML += emptyOpt('— select TN variable —');
+            discoveredVars.forEach(v => {
+                const badge = v.role === 'tmax' ? ' (sugg. TX)' : v.role === 'tmin' ? ' (sugg. TN)' : '';
+                txSel.innerHTML += `<option value="${v.name}">${v.name}${badge}</option>`;
+                tnSel.innerHTML += `<option value="${v.name}">${v.name}${badge}</option>`;
+            });
+            if (variableMap && variableMap.tmax) txSel.value = variableMap.tmax;
+            if (variableMap && variableMap.tmin) tnSel.value = variableMap.tmin;
+            if (!variableMap) {
+                const tmaxHint = discoveredVars.find(v => v.role === 'tmax');
+                const tminHint = discoveredVars.find(v => v.role === 'tmin');
+                if (tmaxHint) txSel.value = tmaxHint.name;
+                if (tminHint) tnSel.value = tminHint.name;
+            }
+            if (variableMap && variableMap.primary) {
+                document.getElementById('primaryVar').value = variableMap.primary;
+            }
+            document.getElementById('var_dropdowns').style.display = 'block';
+            el.innerHTML = `<span class="task-completed">✔ ${discoveredVars.length} variable(s) found.</span>
+                <table class="table table-sm mt-2 batch-table mb-0">
+                <thead><tr><th>Variable</th><th>Units</th><th>Detected role</th></tr></thead>
+                <tbody>${discoveredVars.map(v =>
+                    `<tr><td><b>${v.name}</b></td><td>${v.units || '—'}</td>
+                     <td>${v.role === 'tmax' ? 'TX' : v.role === 'tmin' ? 'TN' : 'other'}</td></tr>`).join('')}
+                </tbody></table>`;
+            logMsg(`<span class="task-completed">✔ ${discoveredVars.length} variable(s) listed in NetCDF.</span>`);
+        } catch (err) {
+            el.innerHTML = `<span class="task-error">${err.message}</span>`;
+        }
+    }
+
+    async function applyVariableMapping() {
+        const tx = document.getElementById('txVar').value;
+        const tn = document.getElementById('tnVar').value;
+        if (!tx && !tn) { alert('Select at least one variable for TX and/or TN.'); return; }
+        logMsg('Applying variable mapping…');
+        setProgress(30, 'Loading mapped variables…');
+        try {
+            const payload = {
+                tmax: tx, tmin: tn,
+                primary: document.getElementById('primaryVar').value,
+                temperature_unit: document.getElementById('mapTempUnit').value
+            };
+            const data = await api('/api/map_variables', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            loadedDataInfo = data.info;
+            renderDataInfo(data.info);
+            document.getElementById('var_map_report').innerHTML =
+                `<span class="task-completed">✔ Mapping applied — TX: ${data.variable_map.tmax || '—'},
+                 TN: ${data.variable_map.tmin || '—'}, analysed: ${data.variable_map.primary.toUpperCase()}.</span>`;
+            logMsg(`<span class="task-completed">✔ Variable mapping applied (${data.info.variable}).</span>`);
+            autoFillYearDefaults(data.info);
+            setProgress(100, 'Mapping applied');
+            setTimeout(setReady, 800);
+        } catch (err) {
+            document.getElementById('var_map_report').innerHTML =
+                `<span class="task-error">${err.message}</span>`;
+            logMsg(`<span class="task-error">Mapping error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function uploadShapefile() {
+        const fileInput = document.getElementById('shpFile');
+        if (!fileInput.files.length) { alert('Choose a ZIP, SHP, GeoJSON, or GJSON boundary first.'); return; }
+        logMsg('Uploading boundary...');
+        setProgress(25, 'Reading shapefile...');
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        try {
+            const data = await api('/api/upload_shapefile', { method: 'POST', body: fd });
+            document.getElementById('shp_info').innerHTML =
+                `<span class="task-completed">✔ ${data.feature_count} feature(s) · CRS: ${data.crs}</span><br>
+                 <span class="text-muted">Bounds: ${data.bounds[0].toFixed(3)},${data.bounds[1].toFixed(3)} → ${data.bounds[2].toFixed(3)},${data.bounds[3].toFixed(3)}</span><br>
+                 <span class="text-muted">Regions: ${data.features.map(f => f.label).slice(0, 8).join(', ')}</span>`;
+            plotStudyArea();
+            logMsg(`<span class="task-completed">✔ Boundary parsed: ${data.feature_count} feature(s).</span>`);
+            setProgress(100, 'Boundary loaded');
+            setTimeout(setReady, 800);
+        } catch (err) {
+            logMsg(`<span class="task-error">Shapefile error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function preprocessData() {
+        const payload = {
+            mask_with_shapefile: document.getElementById('maskShp').checked,
+            exclude_sea: document.getElementById('excludeSea').checked,
+            fill_gaps: document.getElementById('fillGaps').checked,
+            smooth: document.getElementById('smoothT').checked,
+            smooth_window: parseInt(document.getElementById('smoothWin').value) || 7,
+            bounds: parseBounds(document.getElementById('boundsBox').value)
+        };
+        if (!document.getElementById('maskShp').checked && payload.bounds === null) {
+            payload.mask_with_shapefile = false;
+        }
+        logMsg('Preprocessing grid...');
+        setProgress(40, 'Preprocessing...');
+        try {
+            const data = await api('/api/preprocess', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            document.getElementById('preprocess_report').innerHTML =
+                `<pre class="mb-0" style="font-size:0.7rem;">` + data.steps.join('\n') +
+                `\nmasked cells: ${data.masked_cells} / ${data.total_cells} (${(data.elapsed_ms/1000).toFixed(1)} s)` + `</pre>`;
+            renderDataInfo(data.grid_info);
+            window._gridReady = true;
+            logMsg('<span class="task-completed">✔ Preprocessing complete.</span>');
+            renderPreprocessPreview(data.preview, data.grid_info);
+            setProgress(100, 'Preprocessed');
+            setTimeout(setReady, 800);
+        } catch (err) {
+            logMsg(`<span class="task-error">Preprocessing error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function uploadLandMask() {
+        const input = document.getElementById('landMaskFile');
+        if (!input.files.length) { alert('Choose a land/ocean mask file first.'); return; }
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        try {
+            const data = await api('/api/upload_landmask', { method: 'POST', body: fd });
+            document.getElementById('landmask_info').innerHTML =
+                `<span class="task-completed">✔ Land mask loaded: ${data.land_cells.toLocaleString()} land / ${data.total_cells.toLocaleString()} cells (${data.land_percent}%).</span>`;
+            logMsg('<span class="task-completed">✔ Static land/ocean mask uploaded.</span>');
+        } catch (err) {
+            logMsg(`<span class="task-error">Land mask error: ${err.message}</span>`);
+            document.getElementById('landmask_info').innerHTML =
+                `<span class="task-error">${err.message}</span>`;
+        }
+    }
+
+        function renderPreprocessPreview(preview, info) {
+                // old sparse preview card no longer used
+                const oldCard = document.getElementById('preprocessPreviewCard');
+                if (oldCard) oldCard.style.display = 'none';
+
+                if (!preview) return;
+
+                // populate the Data Assessment tab
+                const assessSum = document.getElementById('assess_summary');
+                const assessLabel = document.getElementById('assess_time_label');
+
+                const f = preview.field;
+                const activeCells = preview.active_cells || 0;
+                const totalCells  = preview.total_cells || 0;
+                const cov = preview.coverage != null ? preview.coverage.toFixed(1) : '0';
+                const fmt = v => (v == null) ? '—' : v.toFixed(2);
+                assessSum.innerHTML = `
+                    <div class="row text-center" style="font-family:'Consolas',monospace; font-size:0.82rem;">
+                        <div class="col"><span class="text-muted">Active:</span> <b>${activeCells.toLocaleString()}</b></div>
+                        <div class="col"><span class="text-muted">Total:</span> <b>${totalCells.toLocaleString()}</b></div>
+                        <div class="col"><span class="text-muted">Coverage:</span> <b>${cov}%</b></div>
+                        <div class="col"><span class="text-muted">Min:</span> <b>${fmt(preview.field_min)}</b></div>
+                        <div class="col"><span class="text-muted">Max:</span> <b>${fmt(preview.field_max)}</b></div>
+                        <div class="col"><button class="btn btn-outline-success btn-sm" onclick="switchTab('tab-compute'); runDetect();">Run Detection →</button></div>
+                    </div>`;
+                if (f) assessLabel.textContent = 'Showing: ' + (f.time_label || '');
+
+                // fetch the field and render heatmap
+                loadAssessmentField();
+        }
+
+    // ——— Data Assessment field rendering ———
+
+    async function loadAssessmentField() {
+        const mode = document.getElementById('assess_mode').value;
+        const tIdx = document.getElementById('assess_tidx').value;
+        const container = document.getElementById('assessMapContainer');
+        container.innerHTML = '<div class="text-muted text-center py-5">Loading field…</div>';
+        try {
+            const payload = {};
+            if (mode === 'last') payload.mode = 'last';
+            else if (mode === 'mean') payload.mode = 'mean';
+            else { payload.mode = 'index'; payload.time_idx = parseInt(tIdx || '0', 10); }
+            const r = await fetch('/api/preview/field', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await r.json();
+            if (!data.ok) { container.innerHTML = '<div class="text-danger py-4 text-center">' + (data.error || 'Failed') + '</div>'; return; }
+            renderAssessHeatmap(data);
+        } catch (e) { container.innerHTML = '<div class="text-danger py-4 text-center">Error: ' + e.message + '</div>'; }
+    }
+
+    function renderAssessHeatmap(data) {
+        const container = document.getElementById('assessMapContainer');
+        const f = data.field;
+        document.getElementById('assess_time_label').textContent = 'Showing: ' + (f.time_label || '');
+
+        const trace = {
+            z: f.values, x: f.lons, y: f.lats, type: 'heatmap',
+            colorscale: 'Viridis', reversescale: true, showscale: true,
+            hoverongaps: false, zsmooth: 'best',
+            colorbar: { title: 'Value', thickness: 14, titlefont: { size: 11 } }
+        };
+
+        const layout = {
+            paper_bgcolor: '#000', plot_bgcolor: '#000',
+            margin: { t: 35, b: 40, l: 55, r: 45 },
+            xaxis: { title: 'Longitude (°)', gridcolor: '#222', color: '#8899aa',
+                     tickfont: { size: 10, color: '#8899aa' } },
+            yaxis: { title: 'Latitude (°)', gridcolor: '#222', color: '#8899aa', scaleanchor: 'x',
+                     tickfont: { size: 10, color: '#8899aa' } },
+            font: { color: '#8899aa', family: 'Consolas, monospace' },
+        };
+
+        // boundary overlay
+        if (window._geoJsonData && window._geoJsonData.boundaries && window._geoJsonData.boundaries.length) {
+            const b = window._geoJsonData.boundaries[0];
+            layout.shapes = [{
+                type: 'line', x0: Math.min(...b.lons), x1: Math.max(...b.lons),
+                y0: Math.min(...b.lats), y1: Math.max(...b.lats),
+                line: { color: '#00ccff', width: 1.2 }
+            }];
+        }
+
+        container.innerHTML = '';
+        Plotly.newPlot(container, [trace], layout, { responsive: true, displaylogo: false });
+
+        container.on('plotly_click', function (evtData) {
+            if (!evtData.points || !evtData.points.length) return;
+            const pt = evtData.points[0];
+            showAssessPointSeries(pt.y, pt.x);
+        });
+    }
+
+    async function showAssessPointSeries(lat, lon) {
+        const card = document.getElementById('assessSeriesCard');
+        const label = document.getElementById('assessPointLabel');
+        const container = document.getElementById('assessSeriesContainer');
+        card.style.display = '';
+        label.textContent = lat.toFixed(3) + '°, ' + lon.toFixed(3) + '°';
+        container.innerHTML = '<div class="text-muted text-center py-4">Loading time series…</div>';
+        try {
+            const r = await fetch('/api/viz/timeseries', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat: lat, lon: lon }) });
+            const data = await r.json();
+            if (!data.ok) { container.innerHTML = '<div class="text-danger py-4 text-center">' + (data.error || 'Failed') + '</div>'; return; }
+            container.innerHTML = '';
+            const fig = typeof data.plot === 'string' ? JSON.parse(data.plot) : data.plot;
+            Plotly.newPlot(container, fig.data, fig.layout, { responsive: true, displaylogo: false });
+        } catch (e) { container.innerHTML = '<div class="text-danger py-4 text-center">Error: ' + e.message + '</div>'; }
+    }
+
+    // ——— Tab-show resize handlers ———
+    // Bootstrap fires 'shown.bs.tab' after the pane is fully visible.
+    (function () {
+        document.querySelectorAll('#mainTabs .nav-link, .sub-tabs .nav-link').forEach(function (btn) {
+            btn.addEventListener('shown.bs.tab', function () {
+                // resize all plotly containers that may be inside newly-visible panes
+                document.querySelectorAll('.viz-plot-container').forEach(function (c) {
+                    if (c.children.length && !c.querySelector('.text-muted')) {
+                        try { Plotly.Plots.resize(c); } catch (_) {}
+                    }
+                });
+                // invalidate leaflet map
+                if (window._studyMap) { try { window._studyMap.invalidateSize(); } catch (_) {} }
+                // auto-fill the data assessment tab when it is opened
+                if (btn.dataset.bsTarget === '#tab-assess' && window._gridReady) {
+                    loadAssessmentField();
+                }
+            });
+        });
+    })();
+
+    // allow programmatic tab switching
+    function switchTab(tabId) {
+        const btn = document.querySelector('[data-bs-target="#' + tabId + '"]');
+        if (btn) { const tab = bootstrap.Tab.getOrCreateInstance(btn); tab.show(); }
+    }
+
+    function parseBounds(text) {
+        if (!text) return null;
+        const parts = text.split(',').map(x => parseFloat(x.trim()));
+        if (parts.length === 4 && parts.every(n => !isNaN(n))) return parts;
+        return null;
+    }
+
+    function renderDataInfo(info) {
+        const card = document.getElementById('dataInfoCard');
+        card.style.display = 'block';
+        document.getElementById('dataInfoBody').innerHTML = `
+            <table class="table table-sm mb-0 batch-table">
+                <tbody>
+                    <tr><td>Variable</td><td class="text-end text-info">${info.variable}</td></tr>
+                    <tr><td>Time steps</td><td class="text-end">${info.ntime}</td></tr>
+                    <tr><td>Grid size</td><td class="text-end">${info.nlat} × ${info.nlon}</td></tr>
+                    <tr><td>Lat range</td><td class="text-end">${info.lat_min.toFixed(2)} → ${info.lat_max.toFixed(2)}</td></tr>
+                    <tr><td>Lon range</td><td class="text-end">${info.lon_min.toFixed(2)} → ${info.lon_max.toFixed(2)}</td></tr>
+                    <tr><td>Time span</td><td class="text-end">${info.t_start.slice(0,7)} → ${info.t_end.slice(0,7)}</td></tr>
+                    <tr><td>Years</td><td class="text-end">${info.n_years}</td></tr>
+                    <tr><td>Mean value</td><td class="text-end">${info.mean.toFixed(2)}</td></tr>
+                    <tr><td>Missing data</td><td class="text-end">${(info.nan_frac * 100).toFixed(1)}%</td></tr>
+                </tbody>
+            </table>`;
+    }
+
+    function autoFillYearDefaults(info) {
+        const ymin = parseInt(info.t_start.slice(0, 4));
+        const ymax = parseInt(info.t_end.slice(0, 4));
+        if (isNaN(ymin) || isNaN(ymax)) return;
+        document.getElementById('clim_start').value = ymin;
+        document.getElementById('clim_end').value = Math.min(ymin + 29, ymax);
+        document.getElementById('stat_ys').value = Math.max(ymin, 1991);
+        document.getElementById('stat_ye').value = ymax;
+        const mid = Math.round((ymin + ymax) / 2);
+        document.getElementById('cmp_a_start').value = ymin;
+        document.getElementById('cmp_a_end').value = mid;
+        document.getElementById('cmp_b_start').value = mid + 1;
+        document.getElementById('cmp_b_end').value = ymax;
+    }
+
+    // ============================================================
+    //  SECTION 02 : COMPUTATIONS
+    // ============================================================
+
+    function detectParams() {
+        return {
+            clim_start: parseInt(document.getElementById('clim_start').value),
+            clim_end: parseInt(document.getElementById('clim_end').value),
+            pctile: parseFloat(document.getElementById('pctile').value) || 90,
+            min_dur: parseInt(document.getElementById('min_dur').value) || 3,
+            join_gaps: document.getElementById('join_gaps').value === 'true',
+            max_gap: parseInt(document.getElementById('max_gap').value) || 2,
+            smooth_pctile: document.getElementById('smooth_pctile').value === 'true',
+            smooth_pctile_width: parseInt(document.getElementById('smooth_pctile_width').value) || 31,
+            window_half_width: parseInt(document.getElementById('window_half_width').value) || 5,
+            n_jobs: parseInt(document.getElementById('nJobs').value) || 0,
+        };
+    }
+
+    let detectTimer = null;
+
+    function fmtElapsed(ms) {
+        const s = (ms || 0) / 1000;
+        if (s < 60) return s.toFixed(1) + ' s';
+        const m = Math.floor(s / 60);
+        return m + ' min ' + (s - m * 60).toFixed(0) + ' s';
+    }
+
+    function startStatusPolling() {
+        clearInterval(detectTimer);
+        const timerEl = document.getElementById('statusTimer');
+        detectTimer = setInterval(async () => {
+            let st;
+            try { st = await api('/api/status'); }
+            catch (e) { return; }
+            setProgress(st.percent || 0, (st.label && st.label !== 'idle') ? st.label : '...');
+            if (timerEl) timerEl.innerText = 'elapsed: ' + fmtElapsed(st.elapsed_ms);
+            const stopBtn = document.getElementById('stopDetectBtn');
+            const runBtn = document.getElementById('detectRunBtn');
+            if (stopBtn) stopBtn.disabled = !st.running;
+            if (runBtn) runBtn.disabled = !!st.running;
+            if (st.phase === 'done' && st.last_summary) {
+                clearInterval(detectTimer);
+                if (stopBtn) stopBtn.disabled = true;
+                if (runBtn) runBtn.disabled = false;
+                renderDetectSummary(st.last_summary);
+                renderDetectTable(st.last_summary.event_table);
+                logMsg(`<span class="task-completed">✔ Detection done: ${st.last_summary.processed_cells} cells OK, ${st.last_summary.error_cells} failed.</span>`);
+                logMsg(`Region total events: ${Math.round(st.last_summary.total_events_region)}`);
+                setProgress(100, `Detection complete (${fmtElapsed(st.elapsed_ms)})`);
+                setTimeout(setReady, 1500);
+            } else if (st.phase === 'error') {
+                clearInterval(detectTimer);
+                if (stopBtn) stopBtn.disabled = true;
+                if (runBtn) runBtn.disabled = false;
+                logMsg(`<span class="task-error">Detection error: ${st.error || 'unknown'}</span>`);
+                document.getElementById('detect_summary_container').innerHTML =
+                    `<div class="text-danger text-center py-4" style="font-size:0.85rem;">${st.error || 'unknown error'}</div>`;
+                setProgress(0, 'Error');
+            } else if (st.phase === 'cancelled') {
+                clearInterval(detectTimer);
+                if (stopBtn) stopBtn.disabled = true;
+                if (runBtn) runBtn.disabled = false;
+                logMsg('<span class="task-error">Detection cancelled.</span>');
+                setProgress(0, 'Cancelled');
+            }
+        }, 1000);
+    }
+
+    async function runDetect() {
+        if (detectTimer) { alert('A detection job is already running. Stop it or wait.'); return; }
+        logMsg('Starting spatial heatwave detection...');
+        setProgress(2, 'Starting detection...');
+        document.getElementById('detect_summary_container').innerHTML =
+            '<div class="text-warning text-center py-4" style="font-size:0.85rem;">Detection in progress — this may take some time for large grids.</div>';
+        try {
+            const res = await api('/api/detect', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(detectParams()) });
+            logMsg(`Detection job started on ${res.n_jobs} cores over ${res.masked_cells.toLocaleString()} masked cells.`);
+            startStatusPolling();
+        } catch (err) {
+            logMsg(`<span class="task-error">Detection start error: ${err.message}</span>`);
+            document.getElementById('detect_summary_container').innerHTML =
+                `<div class="text-danger text-center py-4" style="font-size:0.85rem;">${err.message}</div>`;
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function stopDetect() {
+        try {
+            const r = await api('/api/stop', { method: 'POST' });
+            logMsg(r.cancelling ? 'Cancellation requested ...' : 'No running job to stop.');
+        } catch (err) { logMsg(`<span class="task-error">Stop error: ${err.message}</span>`); }
+    }
+
+    async function clearAll() {
+        if (!confirm('Clear all uploaded data, masks, results and caches?')) return;
+        try {
+            await api('/api/stop', { method: 'POST' });
+            await api('/api/clear', { method: 'POST' });
+            clearInterval(detectTimer);
+            detectTimer = null;
+            document.getElementById('stopDetectBtn').disabled = true;
+            document.getElementById('detectRunBtn').disabled = false;
+            setProgress(0, 'State cleared');
+            logMsg('<span class="task-completed">✔ Uploads / caches / results cleared.</span>');
+            window._gridReady = false;
+            document.getElementById('detect_summary_container').innerHTML =
+                '<div class="text-muted text-center py-4" style="font-size:0.85rem;">Run detection to populate the region summary.</div>';
+            document.getElementById('detect_table_container').innerHTML =
+                '<div class="text-muted text-center py-4" style="font-size:0.85rem;">No results yet.</div>';
+            document.getElementById('preprocess_report').innerHTML = '';
+            document.getElementById('landmask_info').innerHTML = '';
+            document.getElementById('shp_info').innerHTML = '';
+            const info = document.getElementById('dataInfoCard');
+            if (info) info.style.display = 'none';
+        } catch (err) { logMsg(`<span class="task-error">Clear error: ${err.message}</span>`); }
+    }
+
+    function renderDetectSummary(data) {
+        const s = data.summary;
+        const rows = Object.entries(s).map(([metric, st]) => `
+            <tr>
+                <td class="text-info">${metric}</td>
+                <td>${st.min === null ? '—' : st.min.toFixed(3)}</td>
+                <td>${st.mean === null ? '—' : st.mean.toFixed(3)}</td>
+                <td>${st.median === null ? '—' : st.median.toFixed(3)}</td>
+                <td>${st.max === null ? '—' : st.max.toFixed(3)}</td>
+                <td>${st.total === null ? '—' : st.total.toFixed(1)}</td>
+            </tr>`).join('');
+        document.getElementById('detect_summary_container').innerHTML = `
+            <div class="d-flex gap-3 flex-wrap mb-2" style="font-size:0.8rem;">
+                <span class="station-badge">Processed cells: ${data.processed_cells}</span>
+                <span class="station-badge">Failed cells: ${data.error_cells}</span>
+                <span class="station-badge">Region events: ${Math.round(data.total_events_region)}</span>
+            </div>
+            <div class="table-responsive">
+            <table class="table table-sm table-bordered batch-table mb-0">
+                <thead><tr><th>Metric</th><th>Min</th><th>Mean</th><th>Median</th><th>Max</th><th>Total/Sum</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table></div>`;
+    }
+
+    function renderDetectTable(events) {
+        const container = document.getElementById('detect_table_container');
+        if (!events || !events.length) { container.innerHTML = '<div class="text-muted p-3">No events detected.</div>'; return; }
+        const rows = events.map(e => `
+            <tr>
+                <td>${e.lat.toFixed(3)}</td>
+                <td>${e.lon.toFixed(3)}</td>
+                <td>${e.total_events}</td>
+                <td>${e.avg_duration_days ?? '—'}</td>
+                <td>${e.avg_max_intensity ?? '—'}</td>
+            </tr>`).join('');
+        container.innerHTML = `<div class="table-responsive"><table class="table table-sm table-bordered batch-table mb-0">
+            <thead><tr><th>Lat</th><th>Lon</th><th>Total Events</th><th>Mean Duration</th><th>Mean Peak Intensity</th></tr></thead>
+            <tbody>${rows}</tbody></table></div>
+            <div class="text-muted mt-1" style="font-size:0.7rem;">Sorted by event count. ${events.length} cells shown.</div>`;
+    }
+
+    async function runStatistics() {
+        logMsg('Computing regional statistics...');
+        setProgress(40, 'Computing statistics...');
+        const payload = {
+            year_start: parseInt(document.getElementById('stat_ys').value),
+            year_end: parseInt(document.getElementById('stat_ye').value),
+            block_length: parseInt(document.getElementById('stat_block').value) || 1
+        };
+        try {
+            const data = await api('/api/statistics', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            renderStatsOverview(data.summary);
+            renderStatsAnnual(data.regional_annual);
+            logMsg(`<span class="task-completed">✔ Statistics computed for ${data.regional_annual.length} block(s).</span>`);
+            setProgress(100, 'Done');
+            setTimeout(setReady, 800);
+        } catch (err) {
+            logMsg(`<span class="task-error">Statistics error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    function renderStatsOverview(summary) {
+        const rows = Object.entries(summary).map(([metric, st]) => `
+            <tr>
+                <td class="text-info">${metric}</td>
+                <td>${st.min === null ? '—' : st.min.toFixed(3)}</td>
+                <td>${st.mean === null ? '—' : st.mean.toFixed(3)}</td>
+                <td>${st.max === null ? '—' : st.max.toFixed(3)}</td>
+                <td>${st.std === null ? '—' : st.std.toFixed(3)}</td>
+            </tr>`).join('');
+        document.getElementById('stats_overview_container').innerHTML =
+            `<div class="table-responsive"><table class="table table-sm table-bordered batch-table mb-0">
+                <thead><tr><th>Metric</th><th>Min</th><th>Mean</th><th>Max</th><th>Std</th></tr></thead>
+                <tbody>${rows}</tbody></table></div>`;
+    }
+
+    function renderStatsAnnual(annual) {
+        const rows = annual.map(r => `
+            <tr>
+                <td>${r.block_start}${r.block_end !== r.block_start ? '–' + r.block_end : ''}</td>
+                <td>${r.active_cells}</td>
+                <td>${Math.round(r.total_events)}</td>
+                <td>${Math.round(r.total_hw_days)}</td>
+                <td>${r.total_cumulative_intensity.toFixed(1)}</td>
+                <td>${r.mean_events_per_cell.toFixed(2)}</td>
+                <td>${r.mean_hw_days_per_cell.toFixed(2)}</td>
+            </tr>`).join('');
+        document.getElementById('stats_annual_container').innerHTML =
+            `<div class="table-responsive"><table class="table table-sm table-bordered batch-table mb-0">
+                <thead><tr><th>Block</th><th>Active Cells</th><th>Events</th><th>HW Days</th>
+                    <th>Cumulative Intensity</th><th>Events / Cell</th><th>HW Days / Cell</th></tr></thead>
+                <tbody>${rows}</tbody></table></div>`;
+    }
+
+    async function runTrends() {
+        logMsg('Computing spatial trends...');
+        setProgress(40, 'Computing trends...');
+        const payload = {
+            metric: document.getElementById('trend_metric').value,
+            method: document.getElementById('trend_method').value,
+            clim_start: document.getElementById('clim_start').value,
+            clim_end: document.getElementById('clim_end').value
+        };
+        try {
+            const data = await api('/api/trends', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            renderTrendSummary(data.summary);
+            renderTrendMaps(data);
+            logMsg(`<span class="task-completed">✔ ${data.method} trends computed for metric "${data.metric}".</span>`);
+            setProgress(100, 'Done');
+            setTimeout(setReady, 800);
+        } catch (err) {
+            logMsg(`<span class="task-error">Trends error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    function renderTrendSummary(s) {
+        document.getElementById('trends_summary_container').innerHTML = `
+            <div class="d-flex gap-3 flex-wrap">
+                <span class="station-badge">Cells analysed: ${s.cells}</span>
+                <span class="station-badge text-success">Positive: ${s.positive}</span>
+                <span class="station-badge text-danger">Negative: ${s.negative}</span>
+                <span class="station-badge">Sig. (p&lt;0.05): ${s.significant_cells_5pct} (${(s.significant_frac*100).toFixed(1)}%)</span>
+                <span class="station-badge">Mean value: ${s.mean_value === null ? '—' : s.mean_value.toFixed(4)}</span>
+            </div>`;
+    }
+
+    function renderTrendMaps(data) {
+        const metricLabel = document.getElementById('trend_metric').selectedOptions[0].text;
+        const method = data.method;
+        const isMK = method === 'mann-kendall';
+
+        const mapField = isMK ? data.tau : data.slope;
+        const pField = data.pvalue;
+        const values = mapField.values.flat().filter(v => v !== null && v !== undefined && !isNaN(v));
+
+        let colorscale = 'RdYlBu_r';
+        let unit = '/yr',
+            title = 'Trend (' + metricLabel + ')';
+        if (isMK) { colorscale = 'RdBu_r'; unit = 'τ'; title = 'Mann-Kendall τ (' + metricLabel + ')'; }
+
+        const fig = {
+            data: [{
+                type: 'heatmap', x: mapField.lons, y: mapField.lats,
+                z: mapField.values, colorscale, zmid: 0,
+                colorbar: { title: unit },
+                hovertemplate: 'Lon: %{x:.3f}<br>Lat: %{y:.3f}<br>val: %{z:.4f}<extra></extra>'
+            }],
+            layout: {
+                template: 'plotly_dark', paper_bgcolor: '#0c1714', plot_bgcolor: '#070e0c',
+                title: `<b>${title}</b>`, height: 460, margin: { t: 55, l: 60, r: 70, b: 50 },
+                xaxis: { title: 'Longitude (°E)', showgrid: false, zeroline: false },
+                yaxis: { title: 'Latitude (°N)', showgrid: false, zeroline: false, scaleanchor: 'x' }
+            }
+        };
+
+        Plotly.newPlot('trendMapContainer', fig.data, fig.layout, { responsive: true, displaylogo: false });
+
+        const pfig = {
+            data: [{
+                type: 'heatmap', x: pField.lons, y: pField.lats,
+                z: pField.values, colorscale: 'Viridis',
+                colorbar: { title: 'p' },
+                hovertemplate: 'Lon: %{x:.3f}<br>Lat: %{y:.3f}<br>p: %{z:.4f}<extra></extra>'
+            }],
+            layout: {
+                template: 'plotly_dark', paper_bgcolor: '#0c1714', plot_bgcolor: '#070e0c',
+                title: '<b>Significance (p-value)</b><br><span style="font-size:11px;color:#aaa;">darker = less significant</span>',
+                height: 380, margin: { t: 55, l: 60, r: 70, b: 50 },
+                xaxis: { showgrid: false, zeroline: false },
+                yaxis: { showgrid: false, zeroline: false, scaleanchor: 'x' }
+            }
+        };
+        Plotly.newPlot('trendPContainer', pfig.data, pfig.layout, { responsive: true, displaylogo: false });
+    }
+
+    // ============================================================
+    //  SECTION 03 : VISUALIZATION
+    // ============================================================
+
+    async function generateMetricMap() {
+        logMsg('Generating metric map...');
+        setProgress(40, 'Plotting metric map...');
+        const payload = {
+            metric: document.getElementById('viz_metric').value,
+            show_significant: document.getElementById('showSig').checked
+        };
+        let colorscale = document.getElementById('viz_colorscale').value;
+        try {
+            const data = await api('/api/viz/metric_map', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            let fig = JSON.parse(data.plot);
+            if (fig.data && fig.data[0]) fig.data[0].colorscale = colorscale;
+            Plotly.newPlot('metricMapContainer', fig.data, fig.layout, { responsive: true, displaylogo: false });
+            // click on metric map → auto-fill point series fields and switch to that sub-tab
+            document.getElementById('metricMapContainer').on('plotly_click', function (ev) {
+                if (!ev.points || !ev.points.length) return;
+                const pt = ev.points[0];
+                document.getElementById('pt_lat').value = pt.y.toFixed(4);
+                document.getElementById('pt_lon').value = pt.x.toFixed(4);
+                switchTab('viz-point');
+                setTimeout(generatePointSeries, 150);
+            });
+            logMsg('<span class="task-completed">✔ Metric map rendered. Click a cell to plot its point series.</span>');
+            setProgress(100, 'Done');
+            setTimeout(setReady, 700);
+        } catch (err) {
+            logMsg(`<span class="task-error">Map error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function generatePointSeries() {
+        const lat = parseFloat(document.getElementById('pt_lat').value);
+        const lon = parseFloat(document.getElementById('pt_lon').value);
+        if (isNaN(lat) || isNaN(lon)) { alert('Enter both latitude and longitude, or click the study-area map.'); return; }
+        logMsg(`Plotting time series at (${lat}, ${lon})...`);
+        setProgress(40, 'Plotting point series...');
+        try {
+            const data = await api('/api/viz/timeseries', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat, lon }) });
+            let fig = JSON.parse(data.plot);
+            Plotly.newPlot('pointSeriesContainer', fig.data, fig.layout, { responsive: true, displaylogo: false });
+            document.getElementById('pt_lat').value = data.closest_lat;
+            document.getElementById('pt_lon').value = data.closest_lon;
+            renderPointEvents(data.events);
+            if (data.no_events) {
+                logMsg('<span class="task-running">No heatwave events at this cell.</span>');
+            } else {
+                logMsg(`<span class="task-completed">✔ ${data.events.length} event(s) plotted.</span>`);
+            }
+            setProgress(100, 'Done');
+            setTimeout(setReady, 700);
+        } catch (err) {
+            logMsg(`<span class="task-error">Point series error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    function renderPointEvents(events) {
+        const container = document.getElementById('pointEventsContainer');
+        if (!events || !events.length) { container.innerHTML = '<div class="text-muted p-3">No events at this point.</div>'; return; }
+        const rows = events.map((e, idx) => `
+            <tr>
+                <td>${idx + 1}</td>
+                <td>${e.start}</td>
+                <td>${e.peak}</td>
+                <td>${e.end}</td>
+                <td>${e.duration}</td>
+                <td>${e.intensity_max.toFixed(2)}</td>
+                <td>${e.intensity_mean.toFixed(2)}</td>
+                <td>${e.category}</td>
+            </tr>`).join('');
+        container.innerHTML = `<div class="table-responsive"><table class="table table-sm table-bordered batch-table mb-0">
+            <thead><tr><th>#</th><th>Start</th><th>Peak</th><th>End</th><th>Days</th>
+                <th>Max Int</th><th>Mean Int</th><th>Category</th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`;
+    }
+
+    async function generateAnimation() {
+        logMsg('Building animation...');
+        setProgress(50, 'Assembling animation frames...');
+        const payload = { metric: document.getElementById('anim_metric').value };
+        try {
+            const data = await api('/api/viz/animation', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const fig = JSON.parse(data.plot);
+            Plotly.newPlot('animContainer', fig.data, fig.layout, { responsive: true, displaylogo: false });
+            logMsg(`<span class="task-completed">✔ Animation ready (${(fig.frames || []).length} frames).</span>`);
+            setProgress(100, 'Done');
+            setTimeout(setReady, 700);
+        } catch (err) {
+            logMsg(`<span class="task-error">Animation error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function generateAnnualBars() {
+        logMsg('Generating annual totals...');
+        setProgress(40, 'Building chart...');
+        try {
+            const data = await api('/api/viz/annual_bars', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const fig = JSON.parse(data.plot);
+            Plotly.newPlot('annualContainer', fig.data, fig.layout, { responsive: true, displaylogo: false });
+            logMsg('<span class="task-completed">✔ Annual totals chart rendered.</span>');
+            setProgress(100, 'Done');
+            setTimeout(setReady, 700);
+        } catch (err) {
+            logMsg(`<span class="task-error">Annual totals error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    // ---------- Leaflet study-area map ----------
+    function initStudyMap() {
+        if (leafletMap) return;
+        leafletMap = L.map('studyMap').setView([0, 0], 2);
+        window._studyMap = leafletMap;  // for tab-resize invalidateSize()
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors', maxZoom: 18
+        }).addTo(leafletMap);
+        leafletMap.on('click', (e) => {
+            selectedPointLat = e.latlng.lat;
+            selectedPointLon = e.latlng.lng;
+            document.getElementById('pt_lat').value = e.latlng.lat.toFixed(4);
+            document.getElementById('pt_lon').value = e.latlng.lng.toFixed(4);
+            document.getElementById('studyMapInfo').innerHTML =
+                `<span class="task-completed">✔ Point selected: (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}) — load it in Point Series.</span>`;
+            if (leafletMap.markerPicked) leafletMap.removeLayer(leafletMap.markerPicked);
+            leafletMap.markerPicked = L.circleMarker(e.latlng, {
+                radius: 7, color: '#00e5cc', fillColor: '#00e5cc', fillOpacity: 0.8
+            }).addTo(leafletMap);
+        });
+    }
+
+    async function plotStudyArea() {
+        initStudyMap();
+        try {
+            const data = await api('/api/geojson_boundaries');
+            if (studyBoundaryLayer) { leafletMap.removeLayer(studyBoundaryLayer); }
+            studyBoundaryLayer = L.layerGroup([]);
+            const bounds = [];
+            data.boundaries.forEach(ring => {
+                const latlngs = ring.lats.map((la, k) => [la, ring.lons[k]]);
+                L.polygon(latlngs, { color: '#00e5cc', weight: 2,
+                    fillColor: '#00cc7a', fillOpacity: 0.08 }).addTo(studyBoundaryLayer);
+                latlngs.forEach(ll => bounds.push(ll));
+            });
+            studyBoundaryLayer.addTo(leafletMap);
+            if (bounds.length) leafletMap.fitBounds(bounds, { padding: [30, 30] });
+            if (data.features && data.features.length) {
+                const layer = data.features.map(f => {
+                    return L.circleMarker([f.lat, f.lon], {
+                        radius: 4, color: '#00cc7a', fillColor: '#00cc7a', fillOpacity: 0.7
+                    }).bindPopup(`<b>${f.label}</b><br>${f.lat.toFixed(4)}, ${f.lon.toFixed(4)}`);
+                });
+                leafletMap.layerGroup = L.layerGroup(layer).addTo(leafletMap);
+            }
+            document.getElementById('studyMapInfo').innerHTML =
+                `<span class="station-badge">${data.boundaries.length} boundary ring(s)</span> ` +
+                `<span class="station-badge">${data.features.length} region(s)</span>`;
+        } catch (err) {
+            logMsg(`<span class="task-error">Study area map error: ${err.message}</span>`);
+        }
+    }
+
+    // ============================================================
+    //  SECTION 04 : COMPARATIVE ANALYSIS
+    // ============================================================
+
+    function toggleCompareMode() {
+        cmpMode = document.querySelector('input[name="cmpMode"]:checked').value;
+        document.getElementById('secondaryCard').style.display =
+            cmpMode === 'dataset' ? 'block' : 'none';
+        document.getElementById('cmp_a_start').disabled = cmpMode === 'dataset';
+        document.getElementById('cmp_a_end').disabled = cmpMode === 'dataset';
+        document.getElementById('cmp_b_start').disabled = cmpMode === 'dataset';
+        document.getElementById('cmp_b_end').disabled = cmpMode === 'dataset';
+    }
+    toggleCompareMode();
+
+    async function uploadSecondary() {
+        const fileInput = document.getElementById('secondaryFile');
+        if (!fileInput.files.length) { alert('Choose a secondary dataset file.'); return; }
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        setProgress(30, 'Uploading secondary data...');
+        try {
+            const data = await api('/api/comparison/upload_secondary', { method: 'POST', body: fd });
+            document.getElementById('secondaryInfo').innerHTML =
+                `<span class="task-completed">✔ Secondary loaded: ${data.info.ntime} steps, ${data.info.nlat}×${data.info.nlon}.</span>`;
+            logMsg(`<span class="task-completed">✔ Secondary dataset loaded (${data.source}).</span>`);
+            setProgress(100, 'Secondary loaded');
+            setTimeout(setReady, 700);
+        } catch (err) {
+            logMsg(`<span class="task-error">Secondary upload error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    async function runComparison() {
+        logMsg('Running comparative analysis...');
+        setProgress(40, 'Comparing fields...');
+        const payload = {
+            mode: cmpMode,
+            clim_start_a: parseInt(document.getElementById('cmp_a_start').value),
+            clim_end_a: parseInt(document.getElementById('cmp_a_end').value),
+            clim_start_b: parseInt(document.getElementById('cmp_b_start').value),
+            clim_end_b: parseInt(document.getElementById('cmp_b_end').value),
+            pctile: parseFloat(document.getElementById('cmp_pctile').value) || 90,
+            min_dur: parseInt(document.getElementById('cmp_min_dur').value) || 3,
+            join_gaps: document.getElementById('cmp_join').value === 'true'
+        };
+        try {
+            const data = await api('/api/comparison/compare', { method: 'POST',
+                headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            cmpDiffData = data.diff_maps;
+            renderCompSummaryTable(data);
+            logMsg(`<span class="task-completed">✔ Comparison complete: ${data.label_a} vs ${data.label_b}.</span>`);
+            setProgress(100, 'Done');
+            setTimeout(setReady, 800);
+        } catch (err) {
+            logMsg(`<span class="task-error">Comparison error: ${err.message}</span>`);
+            setProgress(0, 'Error');
+        }
+    }
+
+    function renderCompSummaryTable(data) {
+        const rows = data.stats_table.map(r => `
+            <tr>
+                <td class="text-info">${r.metric}</td>
+                <td>${r.a_mean === null ? '—' : r.a_mean.toFixed(3)}</td>
+                <td>${r.a_max === null ? '—' : r.a_max.toFixed(3)}</td>
+                <td>${r.a_total === null ? '—' : r.a_total.toFixed(1)}</td>
+                <td>${r.b_mean === null ? '—' : r.b_mean.toFixed(3)}</td>
+                <td>${r.b_max === null ? '—' : r.b_max.toFixed(3)}</td>
+                <td>${r.b_total === null ? '—' : r.b_total.toFixed(1)}</td>
+                <td>${r.diff_mean === null ? '—' : (r.diff_mean >= 0 ? '+' : '') + r.diff_mean.toFixed(3)}</td>
+                <td>${r.ratio_mean === null ? '—' : r.ratio_mean.toFixed(2)}</td>
+            </tr>`).join('');
+        document.getElementById('cmpSummaryContainer').innerHTML = `
+            <div class="d-flex gap-2 flex-wrap mb-2" style="font-size:0.78rem;">
+                <span class="station-badge text-info">A: ${data.label_a}</span>
+                <span class="station-badge">B: ${data.label_b}</span>
+            </div>
+            <div class="table-responsive"><table class="table table-sm table-bordered batch-table mb-0">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Metric</th>
+                        <th colspan="3" class="text-center text-primary">Field A</th>
+                        <th colspan="3" class="text-center text-info">Field B</th>
+                        <th rowspan="2">Diff (A−B)</th>
+                        <th rowspan="2">Ratio (A/B)</th>
+                    </tr>
+                    <tr><th>Mean</th><th>Max</th><th>Total</th><th>Mean</th><th>Max</th><th>Total</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table></div>`;
+    }
+
+    async function generateDiffMap() {
+        if (!cmpDiffData) { alert('Run a comparison first.'); return; }
+        const metric = document.getElementById('cmp_diff_metric').value;
+        const d = cmpDiffData[metric];
+        if (!d) { alert('Metric not available in last comparison.'); return; }
+        const symMax = Math.max(1, ...d.diff.flat().filter(v => v !== null && !isNaN(v)).map(Math.abs));
+        const fig = {
+            data: [{
+                type: 'heatmap', x: d.lons, y: d.lats, z: d.diff,
+                colorscale: 'RdBu_r', zmin: -symMax, zmax: symMax, zmid: 0,
+                colorbar: { title: 'A − B' },
+                hovertemplate: 'Lon: %{x:.3f}<br>Lat: %{y:.3f}<br>Δ: %{z:.3f}<extra></extra>'
+            }],
+            layout: {
+                template: 'plotly_dark', paper_bgcolor: '#0c1714', plot_bgcolor: '#070e0c',
+                title: '<b>Difference map — ' + metric + ' (A − B)</b>',
+                height: 380, margin: { t: 55, l: 60, r: 70, b: 50 },
+                xaxis: { title: 'Longitude (°E)', showgrid: false, zeroline: false },
+                yaxis: { title: 'Latitude (°N)', showgrid: false, zeroline: false, scaleanchor: 'x' }
+            }
+        };
+        Plotly.newPlot('cmpDiffContainer', fig.data, fig.layout, { responsive: true, displaylogo: false });
+    }
+
+    // ============================================================
+    //  EXPORT
+    // ============================================================
+    async function exportFields(fmt) {
+        try {
+            const res = await fetch('/api/export/fields', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ format: fmt })
+            });
+            if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'spatial_heatwave_metrics.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            logMsg('<span class="task-completed">✔ Metric CSV exported.</span>');
+        } catch (err) { logMsg(`<span class="task-error">Export error: ${err.message}</span>`); }
+    }
+
+    async function exportReport() {
+        try {
+            const res = await fetch('/api/export/report');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'spatial_heatwave_report.json';
+            document.body.appendChild(a); a.click(); a.remove();
+            logMsg('<span class="task-completed">✔ Report exported.</span>');
+        } catch (err) { logMsg(`<span class="task-error">Report error: ${err.message}</span>`); }
+    }
+
+    // ============================================================
+    //  BOOT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const cores = await api('/api/cores');
+            const sel = document.getElementById('nJobs');
+            sel.innerHTML = '<option value="0" selected>Auto (all)</option>' +
+                Array.from({ length: cores.max }, (_, k) => k + 1)
+                    .map(k => `<option value="${k}">${k} core${k > 1 ? 's' : ''}</option>`)
+                    .join('');
+        } catch (e) { /* ignore */ }
+        try {
+            const h = await api('/api/health');
+            let ok = Object.entries(h.modules).filter(([, v]) => v).map(([k]) => k);
+            logMsg('Modules available: ' + ok.join(', '));
+        } catch (e) {
+            logMsg('<span class="task-error">Health check failed: ' + e.message + '</span>');
+        }
+        try {
+            if (await api('/api/status').then(s => s.running)) {
+                logMsg('An earlier detection job is still running; resuming status polling.');
+                startStatusPolling();
+            }
+        } catch (e) { /* ignore */ }
+        try {
+            const info = await api('/api/data_info');
+            if (info.loaded) { renderDataInfo(info.info); autoFillYearDefaults(info.info); }
+        } catch (e) { /* ignore */ }
+    });
+</script>
+</body>
+</html>
