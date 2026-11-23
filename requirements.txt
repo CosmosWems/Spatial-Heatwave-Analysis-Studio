@@ -1,0 +1,11 @@
+flask
+pandas
+numpy
+scipy
+marineHeatWaves
+plotly
+netcdf4
+rasterio
+geopandas
+shapely
+openpyxl
